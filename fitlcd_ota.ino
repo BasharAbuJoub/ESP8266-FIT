@@ -8,6 +8,8 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <string.h>
+#include <ESP8266HTTPClient.h>
+#include <ArduinoJson.h>
 
 const char* host = "esp8266-webupdate";
 const char* ssid = "Umniah_4E8F76";
@@ -317,6 +319,8 @@ int counter3 = 0;
 int counter4 = 0;
 
 unsigned long prevM = 0;
+unsigned long prevReq = 0;
+long reqSpeed = 1000*60;
 long scrollSpeed = 750; //Scrolling speed ..
 //------------------------------------
 
@@ -499,10 +503,13 @@ void loop()   /*----( LOOP: RUNS CONSTANTLY )----*/
       server.send(200, "text/plain", "Done");
       counter3++;
 
+    }else{
+      lcd.setCursor(0, 2);
+      lcd.print( line3);
     }
 
 
-    //Line4
+    //Line4 Scroller
 
     if (line4.length() > 20 ) {
       unsigned long currentM = millis();
@@ -523,11 +530,62 @@ void loop()   /*----( LOOP: RUNS CONSTANTLY )----*/
 
 
 
+    }else{
+      lcd.setCursor(0, 4);
+      lcd.print( line4);
     }
 
 
   }
 
+  
+  if(currentM - prevReq >= reqSpeed){
+
+  prevReq = currentM;
+  Serial.println("SENDING REQUEST");
+  if (WiFi.status() == WL_CONNECTED) { //Check WiFi connection status
+ 
+    HTTPClient http;  //Declare an object of class HTTPClient
+    
+    http.begin("http://192.168.1.59:3000/api/overlay/192.168.1.217");  //Specify request destination
+
+    int httpCode = http.GET();                                                                  //Send the request
+ 
+    if (httpCode > 0) { //Check the returning code
+ 
+      String payload = http.getString();   //Get the request response payload
+      Serial.println(payload);                     //Print the response payload
+
+      StaticJsonBuffer<2000> jsonBuffer;
+      String json = payload;
+      JsonObject& root = jsonBuffer.parseObject(json);
+      if (!root.success()) {
+
+           drawWord( 0, " F I T ");
+    lcd.setCursor(0, 2);
+    lcd.print("  >Welcome to FIT<  ");
+        Serial.println("Parsing failed");
+      
+       
+      }
+      String l1 = root["line1"];
+      String l2 = root["line2"];
+      line3 = l1;
+      line4 = l2;
+      String bigLine = root["title"];
+      drawWord( 0, bigLine);
+      lcd.setCursor(0, 2);
+      lcd.print("                    ");
+      lcd.setCursor(0, 3);
+      lcd.print("                    ");
+ 
+    }
+ 
+    http.end();   //Close connection
+ 
+  }
+    
+  }
+
 
 }
-
