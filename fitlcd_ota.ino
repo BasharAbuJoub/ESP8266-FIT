@@ -470,9 +470,11 @@ void drawWord (int line, String msg) {
 
 }
 
-
-
-
+// Ayoub was here ... 
+String complete(String a){
+  while(a.length()<20)a+=" ";
+  return a;
+}
 
 
 void loop()   /*----( LOOP: RUNS CONSTANTLY )----*/
@@ -504,6 +506,7 @@ void loop()   /*----( LOOP: RUNS CONSTANTLY )----*/
       counter3++;
 
     }else{
+      
       lcd.setCursor(0, 2);
       lcd.print( line3);
     }
@@ -531,7 +534,7 @@ void loop()   /*----( LOOP: RUNS CONSTANTLY )----*/
 
 
     }else{
-      lcd.setCursor(0, 4);
+      lcd.setCursor(0, 3);
       lcd.print( line4);
     }
 
@@ -542,19 +545,16 @@ void loop()   /*----( LOOP: RUNS CONSTANTLY )----*/
   if(currentM - prevReq >= reqSpeed){
 
   prevReq = currentM;
-  Serial.println("SENDING REQUEST");
   if (WiFi.status() == WL_CONNECTED) { //Check WiFi connection status
- 
     HTTPClient http;  //Declare an object of class HTTPClient
     
-    http.begin("http://192.168.1.59:3000/api/overlay/192.168.1.217");  //Specify request destination
+    http.begin("http://192.168.1.59:3000/api/overlay/" + WiFi.localIP().toString());  
 
-    int httpCode = http.GET();                                                                  //Send the request
+    int httpCode = http.GET();                                                      
  
-    if (httpCode > 0) { //Check the returning code
+    if (httpCode > 0) {
  
-      String payload = http.getString();   //Get the request response payload
-      Serial.println(payload);                     //Print the response payload
+      String payload = http.getString();                
 
       StaticJsonBuffer<2000> jsonBuffer;
       String json = payload;
@@ -562,26 +562,22 @@ void loop()   /*----( LOOP: RUNS CONSTANTLY )----*/
       if (!root.success()) {
 
            drawWord( 0, " F I T ");
-    lcd.setCursor(0, 2);
-    lcd.print("  >Welcome to FIT<  ");
+          lcd.setCursor(0, 2);
+          lcd.print("  >Welcome to FIT<  ");
         Serial.println("Parsing failed");
       
        
       }
       String l1 = root["line1"];
       String l2 = root["line2"];
-      line3 = l1;
-      line4 = l2;
+      line3 = complete(l1);
+      line4 = complete(l2);
       String bigLine = root["title"];
       drawWord( 0, bigLine);
-      lcd.setCursor(0, 2);
-      lcd.print("                    ");
-      lcd.setCursor(0, 3);
-      lcd.print("                    ");
  
     }
  
-    http.end();   //Close connection
+    http.end();  
  
   }
     
